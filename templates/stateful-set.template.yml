@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{PROJECT}}-db-set
+spec:
+  selector:
+    matchLabels:
+      app: {{PROJECT}}-db
+  serviceName: "{{PROJECT}}-service"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{PROJECT}}-db
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - name: db-port
+              containerPort: 5432
+              protocol: TCP
+          volumeMounts:
+            - name: {{PROJECT}}-db-store
+              mountPath: /var/lib/postgresql/data
+          env:
+            - name: POSTGRES_PASSWORD
+              value: postgres
+            - name: POSTGRES_DB
+              value: {{PROJECT}}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+  volumeClaimTemplates:
+    - metadata:
+        name: db-store
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-storage
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 5Gi
